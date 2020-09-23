@@ -1,0 +1,25 @@
+{
+  "name": "asteroids-ts",
+  "version": "0.0.1",
+  "description": "The classic game 'asteroids' written with TypeScript",
+  "main": "index.js",
+  "repository": "github.com/david-wiles/asteroids-ts",
+  "author": "David Wiles",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^0.12.3",
+    "typescript": "^4.0.3",
+    "webpack": "^4.44.2",
+    "webpack-cli": "^3.3.12"
+  },
+  "scripts": {
+    "build:js:debug": "rm -rf build && tsc --sourceMap && webpack --mode=development",
+    "build:js:prod": "rm -rf build && tsc && webpack --mode=production",
+    "watch:js": "tsc --watch & webpack --watch --mode=development",
+    "watch": "cp tsc --sourceMap --watch & webpack --mode=development --watch; fg",
+    "build:assets": "mkdir www/static && cp -R src/css www/static/css && cp src/html/asteroids.html www",
+    "build:dev": "yarn run build:assets && yarn run build:js:debug",
+    "build:prod": "yarn run build:assets && yarn run build:js:prod",
+    "serve": "http-server www"
+  }
+}
