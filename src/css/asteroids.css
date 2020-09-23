@@ -1,9 +1,6 @@
-footer {
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    padding-left: 0;
-    padding-right: 0;
+html, body {
+    margin: 0;
+    padding: 0;
 }
 
 #game-canvas {
