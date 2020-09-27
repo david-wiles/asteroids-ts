@@ -5,8 +5,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
   if (canvas instanceof HTMLCanvasElement) {
 
-    canvas.width = window.screen.width;
-    canvas.height = window.screen.height;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
     let simulation = new Simulation(canvas);
     simulation.registerListeners();

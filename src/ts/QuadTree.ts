@@ -5,7 +5,7 @@
  *
  * QuadTree data structure to minimize work for object collision
  */
-import {Entity} from "../Entities";
+import {Entity} from "./Entities";
 import {Bounds} from "./types";
 
 // TODO make this configurable
@@ -49,8 +49,6 @@ export default class QuadTree {
       }
     });
   }
-
-  getIntersections
 
   // Returns all objects in quadTrees intersecting the entity, including the entity
   searchAdjacent(entity: Bounds): Entity[] {

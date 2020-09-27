@@ -1,7 +1,8 @@
 import World from "./World";
-import {Bounds, UserInput} from "./common/types";
-import {Starship} from "./Entities";
+import {Bounds, UserInput} from "./types";
+import {Asteroid, Starship} from "./Entities";
 import Graphics from "./Graphics";
+import GLOBAL from "./Global";
 
 enum GameState {
   Initializing,
@@ -35,13 +36,22 @@ export default class Simulation {
     }
     this.ctx = this.canvas.getContext("2d");
 
+    GLOBAL.worldWidth = canvas.width;
+    GLOBAL.worldHeight = canvas.height;
+
     // Initialize the world using width and height from the canvas
-    this.world = new World(canvas.width, canvas.height);
-    // this.graphics = new Graphics(canvas.getContext("2d"));
+    this.world = new World();
   }
 
   setUp() {
-    this.world.addEntity(new Starship(500, 500, true));
+    this.world.addEntity(new Starship(500, 500));
+
+    this.world.addEntity(new Asteroid(250, 250, 100, 100, 10));
+    this.world.addEntity(new Asteroid(750, 250, 100, 100, 10));
+    this.world.addEntity(new Asteroid(150, 150, 100, 100, 10));
+    this.world.addEntity(new Asteroid(900, 50, 100, 100, 10));
+    this.world.addEntity(new Asteroid(700, 50, 100, 100, 10));
+
   }
 
   start() {
@@ -91,11 +101,11 @@ export default class Simulation {
       let dt = now - this.dt;
       this.dt = now;
 
-      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      this.ctx.clearRect(0, 0, GLOBAL.worldWidth, GLOBAL.worldHeight);
 
-      // Draw all entities
-      this.world.entitiesInView(this.canvasView)
-        .forEach(entity => entity.draw(this.ctx, dt));
+      // Draw all entities. Since all entities are always in view, there is no need to search the quadtree
+      this.world.entities
+        .forEach(entity => entity.draw(this.ctx));
 
       // Calculate next position
       this.state = GameState.Calculating;
