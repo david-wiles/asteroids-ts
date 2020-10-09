@@ -1,4 +1,4 @@
-import {UserInput} from "./types";
+import {Bounds, UserInput} from "./types";
 import GLOBAL from "./Global";
 
 export abstract class Entity {
@@ -18,6 +18,9 @@ export abstract class Entity {
   shouldDelete: boolean = false;
 
   hitPoints: number;
+
+  shieldPoints: number;
+  shield: boolean;
 
   constructor(x: number, y: number, width: number, height: number) {
     this.x = x;
@@ -42,6 +45,8 @@ export abstract class Entity {
 
   computeNextPosition(input: UserInput, dt: number, adjacent: Entity[]) {}
   render(ctx: CanvasRenderingContext2D) {}
+  shieldOn(dt: number) {}
+  endShield() {}
 
   // Computes position after 'wrapping' the player to the other side of the screen.
   // Also recalculates rotation to keep the angle between 0 and 2pi
@@ -75,10 +80,13 @@ export class Starship extends Entity {
   isPlayer: boolean;
   shouldDelete: boolean = false;
 
-  hitPoints = 100;
+  hitPoints = 20;
+
+  shieldPoints = 5000;
+  shield = false;
 
   constructor(x: number, y: number) {
-    super(x, y, 10, 50);
+    super(x, y, 30, 50);
     this.isPlayer = true;
   }
 
@@ -95,7 +103,8 @@ export class Starship extends Entity {
     this.y += this.speedY;
 
     adjacent.forEach((entity) => {
-      if (entity.type === "Asteroid" && hasCollision(this, entity)) {
+      let bounds = this.shield ? { x: this.x - 35, y: this.y - 25, width: 100, height: 100 } : this;
+      if (entity.type === "Asteroid" && hasCollision(bounds, entity)) {
         entity.shouldDelete = true;
         this.hit(10);
       }
@@ -103,8 +112,41 @@ export class Starship extends Entity {
   }
 
   render(ctx: CanvasRenderingContext2D) {
-    ctx.fillRect(this.x + this.width / 2, this.y, this.width, this.height);
-    ctx.fillRect(this.x - (this.height / 2) + this.width, this.y + this.height, 50, 10);
+    ctx.beginPath();
+    ctx.fillStyle = "white";
+    ctx.moveTo(this.x + this.width / 2, this.y);
+    ctx.lineTo(this.x, this.y + this.height);
+    ctx.lineTo(this.x + this.width / 2, this.y + this.height - 10);
+    ctx.lineTo(this.x + this.width, this.y + this.height);
+    ctx.fill();
+
+    if (this.shield) {
+      ctx.beginPath();
+      ctx.arc(this.x + this.width / 2, this.y + this.height / 2, 50, 0, 2 * Math.PI);
+      ctx.strokeStyle = "blue";
+      ctx.stroke();
+    }
+  }
+
+  hit(damage: number) {
+    if (!this.shield) {
+      super.hit(damage);
+      document.querySelector(".hp > .value").textContent = this.hitPoints.toString();
+    }
+  }
+
+  shieldOn(dt: number) {
+    if (this.shieldPoints > 0) {
+      this.shield = true;
+      this.shieldPoints -= dt;
+    } else {
+      this.shieldPoints = 0;
+    }
+    document.querySelector(".shield > .value").textContent = this.shieldPoints.toString();
+  }
+
+  endShield() {
+    this.shield = false;
   }
 
   private increaseSpeed(dt: number) {
@@ -155,7 +197,10 @@ export class Asteroid extends Entity {
   }
 
   render(ctx: CanvasRenderingContext2D) {
-    ctx.fillRect(this.x, this.y, this.width, this.height);
+    ctx.beginPath();
+    ctx.fillStyle = "white";
+    ctx.arc(this.x + this.width / 2, this.y + this.height / 2, this.width / 2, 0, 2 * Math.PI);
+    ctx.fill();
   }
 
   private generateRandomSpeed(range: number) {
@@ -208,25 +253,22 @@ export class Projectile extends Entity {
   }
 
   render(ctx: CanvasRenderingContext2D) {
+    ctx.fillStyle = "white";
     ctx.fillRect(this.x + this.width / 2, this.y + this.height / 2, this.width, this.height);
   }
 }
 
-const hasCollision = (e1: Entity, e2: Entity): boolean => {
+const hasCollision = (e1: Bounds, e2: Bounds): boolean => {
   // TODO real collision detection. This just finds the center and 'radius' for both objects and compares
   let centerX1 = e1.x + e1.width / 2;
   let centerY1 = e1.y + e1.height / 2;
-  let radius1 = (e1.width / 2 + e1.height / 2) / 2;
+  let radius1 = e1.width > e1.height ? e1.width / 2 : e1.height / 2;
 
   let centerX2 = e2.x + e2.width / 2;
   let centerY2 = e2.y + e2.height / 2;
-  let radius2 = (e2.width / 2 + e2.height / 2) / 2;
+  let radius2 = e2.width > e2.height ? e2.width / 2 : e2.height / 2;
 
   let distance = Math.sqrt(Math.pow(centerX1 - centerX2, 2) + Math.pow(centerY1 - centerY2, 2));
 
-  if (distance <= radius1 || distance <= radius2) {
-    return true;
-  } else {
-    return false;
-  }
+  return distance <= (radius1 + radius2);
 }

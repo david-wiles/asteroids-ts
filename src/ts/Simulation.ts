@@ -102,6 +102,8 @@ export default class Simulation {
       this.dt = now;
 
       this.ctx.clearRect(0, 0, GLOBAL.worldWidth, GLOBAL.worldHeight);
+      this.ctx.fillStyle = "black";
+      this.ctx.fillRect(0, 0, GLOBAL.worldWidth, GLOBAL.worldHeight);
 
       // Draw all entities. Since all entities are always in view, there is no need to search the quadtree
       this.world.entities

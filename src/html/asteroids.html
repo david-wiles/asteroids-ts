@@ -4,15 +4,69 @@
   <meta charset="utf-8">
   <title>David's Blog</title>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <link rel="stylesheet" href="/static/css/asteroids.css"/>
   <style>
       html, body { margin: 0; padding: 0; }
       #game-canvas { position: fixed; top: 0; left: 0; }
+      .status-bar {
+          display: flex;
+          flex-direction: row;
+          justify-content: space-between;
+          position: fixed;
+          width: 100%;
+          bottom: 0;
+          left: 0;
+      }
+      .status-bar > .left-bar {
+          display: flex;
+          flex-direction: row;
+          justify-content: flex-end;
+      }
+      .status-bar > .right-bar {
+          display: flex;
+          flex-direction: row;
+          justify-content: flex-start;
+      }
+      .label, .value {
+          margin: 0 15px;
+          color: white;
+      }
   </style>
 </head>
 <body>
 
 <canvas id="game-canvas" width="" height=""></canvas>
+<div class="status-bar">
+  <div class="left-bar">
+    <div class="score">
+      <span class="label">
+        Score
+      </span>
+    </div>
+    <div class="lives">
+      <span class="label">
+        Lives
+      </span>
+    </div>
+  </div>
+  <div class="right-bar">
+    <div class="hp">
+      <span class="label">
+        HP:
+      </span>
+      <span class="value">
+        100
+      </span>
+    </div>
+    <div class="shield">
+      <span class="label">
+        Shield
+      </span>
+      <span class="value">
+        100
+      </span>
+    </div>
+  </div>
+</div>
 
 <script src="/static/js/asteroids.js"></script>
 </body>
