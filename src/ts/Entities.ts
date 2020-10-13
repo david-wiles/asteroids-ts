@@ -43,10 +43,24 @@ export abstract class Entity {
     ctx.restore();
   }
 
-  computeNextPosition(input: UserInput, dt: number, adjacent: Entity[]) {}
-  render(ctx: CanvasRenderingContext2D) {}
-  shieldOn(dt: number) {}
-  endShield() {}
+  center(): {x: number, y: number} {
+    return {
+      x: this.x + this.width / 2,
+      y: this.y + this.height /2
+    };
+  }
+
+  computeNextPosition(input: UserInput, dt: number, adjacent: Entity[]) {
+  }
+
+  render(ctx: CanvasRenderingContext2D) {
+  }
+
+  shieldOn(dt: number) {
+  }
+
+  endShield() {
+  }
 
   // Computes position after 'wrapping' the player to the other side of the screen.
   // Also recalculates rotation to keep the angle between 0 and 2pi
@@ -96,14 +110,15 @@ export class Starship extends Entity {
 
     if (input.forward) this.increaseSpeed(dt);
     if (input.backward) this.decreaseSpeed(dt);
-    if (input.rotateRight) this.rotation += dt * 0.05;
-    if (input.rotateLeft) this.rotation -= dt * 0.05;
+    if (input.rotateRight) this.rotationRate += dt * 0.001;
+    if (input.rotateLeft) this.rotationRate -= dt * 0.001;
 
     this.x += this.speedX;
     this.y += this.speedY;
+    this.rotation += this.rotationRate;
 
     adjacent.forEach((entity) => {
-      let bounds = this.shield ? { x: this.x - 35, y: this.y - 25, width: 100, height: 100 } : this;
+      let bounds = this.shield ? {x: this.x - 35, y: this.y - 25, width: 100, height: 100} : this;
       if (entity.type === "Asteroid" && hasCollision(bounds, entity)) {
         entity.shouldDelete = true;
         this.hit(10);
@@ -123,8 +138,10 @@ export class Starship extends Entity {
     if (this.shield) {
       ctx.beginPath();
       ctx.arc(this.x + this.width / 2, this.y + this.height / 2, 50, 0, 2 * Math.PI);
-      ctx.strokeStyle = "blue";
+      ctx.strokeStyle = "rgba(66, 216, 239, 0.5)";
       ctx.stroke();
+      ctx.fillStyle = "rgba(66, 216, 239, 0.5)";
+      ctx.fill();
     }
   }
 
@@ -180,13 +197,18 @@ export class Asteroid extends Entity {
 
   hitPoints: number;
 
+  private edges: Array<{ x: number, y: number }>;
+
   constructor(x: number, y: number, width: number, height: number, hitPoints: number) {
     super(x, y, width, height);
     this.isPlayer = false;
     this.hitPoints = hitPoints;
 
     // Create a random speed based on the size of the asteroid
-    this.generateRandomSpeed(5 / Math.log10(height * width));
+    let speed = generateRandomSpeed(5 / Math.log10(height * width));
+    this.speedX = speed.x;
+    this.speedY = speed.y;
+    this.edges = Asteroid.generateEdges(width / 2);
   }
 
   computeNextPosition(input: UserInput, dt: number, adjacent: Entity[]) {
@@ -197,15 +219,33 @@ export class Asteroid extends Entity {
   }
 
   render(ctx: CanvasRenderingContext2D) {
+    ctx.fillStyle = 'white';
+    let center = this.center();
+
     ctx.beginPath();
+    ctx.moveTo(center.x + this.edges[0].x, center.y + this.edges[0].y);
+    for (let edge of this.edges.slice(1)) {
+      ctx.lineTo(center.x + edge.x, center.y + edge.y);
+    }
+
     ctx.fillStyle = "white";
-    ctx.arc(this.x + this.width / 2, this.y + this.height / 2, this.width / 2, 0, 2 * Math.PI);
     ctx.fill();
   }
 
-  private generateRandomSpeed(range: number) {
-    this.speedX = Math.random() * range * 2 - range;
-    this.speedY = Math.random() * range * 2 - range;
+  // Generates an asteroid shape by creating a new list of edges
+  private static generateEdges(radius: number): Array<{ x: number, y: number }> {
+    let edgeCount = Math.ceil(radius / 5);
+    let edges = new Array<{ x: number, y: number }>(edgeCount);
+    let slice = (2 * Math.PI) / edgeCount;
+    for (let i = 0; i < edgeCount; i++) {
+      let angle = Math.random() * (slice) + i * slice;
+      edges[i] = {
+        x: radius * Math.sin(angle),
+        y: radius * -Math.cos(angle)
+      }
+    }
+
+    return edges;
   }
 }
 
@@ -229,6 +269,7 @@ export class Projectile extends Entity {
 
   // Determines when the projectile should be deleted
   private expirationTime: number;
+  private lastPosition: {x: number, y: number};
 
   private damage = 5;
 
@@ -240,12 +281,17 @@ export class Projectile extends Entity {
   }
 
   computeNextPosition(input: UserInput, dt: number, adjacent: Entity[]) {
+    this.lastPosition = {
+      x: this.x,
+      y: this.y
+    };
+
     this.x += this.speedX * dt * 0.1;
     this.y += this.speedY * dt * 0.1;
     if (Date.now() > this.expirationTime) this.shouldDelete = true;
 
     adjacent.forEach((entity) => {
-      if (entity.type === "Asteroid" && hasCollision(this, entity)) {
+      if (entity.type === "Asteroid" && this.intersectsObject(entity)) {
         this.shouldDelete = true;
         entity.hit(this.damage);
       }
@@ -255,6 +301,31 @@ export class Projectile extends Entity {
   render(ctx: CanvasRenderingContext2D) {
     ctx.fillStyle = "white";
     ctx.fillRect(this.x + this.width / 2, this.y + this.height / 2, this.width, this.height);
+  }
+
+  // Creates a line between the last position and current position to determine if the projectile
+  // intersected the object. This assumes the velocity of the projectile is much greater than that of
+  // the object. https://math.stackexchange.com/questions/275529/check-if-line-intersects-with-circles-perimeter
+  private intersectsObject(entity: Entity): boolean {
+    let radius = entity.width / 2;
+    let center = entity.center();
+    let ax = this.x - center.x;
+    let ay = this.y - center.y;
+    let bx = this.lastPosition.x - center.x;
+    let by = this.lastPosition.y - center.y;
+
+    let a = Math.pow(bx - ax, 2) + Math.pow(by - ay, 2);
+    let b = 2 * (ax * (bx - ax) + ay * (by - ay));
+    let c = Math.pow(ax, 2) + Math.pow(ay, 2) - Math.pow(radius, 2);
+    let disc = Math.pow(b, 2) - 4 * a * c;
+
+    if (disc <= 0) return false;
+
+    let sqrtDisc = Math.sqrt(disc);
+    let t1 = (-b + sqrtDisc) / (2 * a);
+    let t2 = (-b - sqrtDisc) / (2 * a);
+
+    return (0 < t1 && t1 < 1) || (0 < t2 && t2 < 1);
   }
 }
 
@@ -271,4 +342,11 @@ const hasCollision = (e1: Bounds, e2: Bounds): boolean => {
   let distance = Math.sqrt(Math.pow(centerX1 - centerX2, 2) + Math.pow(centerY1 - centerY2, 2));
 
   return distance <= (radius1 + radius2);
-}
+};
+
+const generateRandomSpeed = (range: number): {x: number, y: number} => {
+  return {
+    x: Math.random() * range * 2 - range,
+    y: Math.random() * range * 2 - range
+  };
+};

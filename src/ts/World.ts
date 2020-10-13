@@ -51,8 +51,8 @@ export default class World {
       let dx = (Math.sin(this.player.rotation) * 15) + this.player.speedX;
       let dy = (Math.cos(this.player.rotation) * -15) + this.player.speedY;
       this.addEntity(new Projectile(
-        this.player.x + this.player.width / 2,
-        this.player.y + this.player.height / 2,
+        (this.player.x + this.player.width / 2) - 5,
+        (this.player.y + this.player.height / 2),
         dx,
         dy
       ));
