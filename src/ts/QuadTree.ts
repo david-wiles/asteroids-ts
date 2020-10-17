@@ -91,7 +91,7 @@ export default class QuadTree {
   }
 
   // Finds all nodes intersecting with an object
-  getIntersectingNodes(entity: Bounds) {
+  private getIntersectingNodes(entity: Bounds): QuadTree[] {
     let nodes = new Array<QuadTree>();
     let verticalMidpoint = this.bounds.x + this.bounds.width / 2;
     let horizontalMidpoint = this.bounds.y + this.bounds.height / 2;

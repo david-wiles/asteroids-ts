@@ -1,5 +1,6 @@
 import {Bounds, UserInput} from "./types";
 import GLOBAL from "./Global";
+import {hasCollision} from "./util";
 
 export abstract class Entity {
   type: string;
@@ -16,6 +17,8 @@ export abstract class Entity {
 
   isPlayer: boolean;
   shouldDelete: boolean = false;
+  destructSpeedX: number;
+  destructSpeedY: number;
 
   hitPoints: number;
 
@@ -43,10 +46,10 @@ export abstract class Entity {
     ctx.restore();
   }
 
-  center(): {x: number, y: number} {
+  center(): { x: number, y: number } {
     return {
       x: this.x + this.width / 2,
-      y: this.y + this.height /2
+      y: this.y + this.height / 2
     };
   }
 
@@ -65,15 +68,17 @@ export abstract class Entity {
   // Computes position after 'wrapping' the player to the other side of the screen.
   // Also recalculates rotation to keep the angle between 0 and 2pi
   wrapAround() {
-    this.x = (GLOBAL.worldWidth + this.x) % GLOBAL.worldWidth;
-    this.y = (GLOBAL.worldHeight + this.y) % GLOBAL.worldHeight;
+    this.x = ((GLOBAL.worldWidth + 200) + this.x) % (GLOBAL.worldWidth + 100) - 100;
+    this.y = ((GLOBAL.worldHeight + 200) + this.y) % (GLOBAL.worldHeight + 100) - 100;
     this.rotation %= (Math.PI) * 2;
   }
 
-  hit(damage: number) {
+  hit(damage: number, destX = 0, destY = 0) {
     this.hitPoints -= damage;
     if (this.hitPoints <= 0) {
       this.shouldDelete = true;
+      this.destructSpeedX = destX;
+      this.destructSpeedY = destY;
     }
   }
 }
@@ -94,9 +99,9 @@ export class Starship extends Entity {
   isPlayer: boolean;
   shouldDelete: boolean = false;
 
-  hitPoints = 20;
+  hitPoints = 1;
 
-  shieldPoints = 5000;
+  shieldPoints = 1000;
   shield = false;
 
   constructor(x: number, y: number) {
@@ -110,18 +115,18 @@ export class Starship extends Entity {
 
     if (input.forward) this.increaseSpeed(dt);
     if (input.backward) this.decreaseSpeed(dt);
-    if (input.rotateRight) this.rotationRate += dt * 0.001;
-    if (input.rotateLeft) this.rotationRate -= dt * 0.001;
+    if (input.rotateRight) this.rotation += dt * 0.03;
+    if (input.rotateLeft) this.rotation -= dt * 0.03;
 
     this.x += this.speedX;
     this.y += this.speedY;
-    this.rotation += this.rotationRate;
 
     adjacent.forEach((entity) => {
       let bounds = this.shield ? {x: this.x - 35, y: this.y - 25, width: 100, height: 100} : this;
       if (entity.type === "Asteroid" && hasCollision(bounds, entity)) {
         entity.shouldDelete = true;
-        this.hit(10);
+        entity.hit(10, this.speedX * 0.5, this.speedY * 0.5);
+        this.hit(10, entity.speedX, entity.speedY);
       }
     });
   }
@@ -145,10 +150,9 @@ export class Starship extends Entity {
     }
   }
 
-  hit(damage: number) {
+  hit(damage: number, destX: number, destY: number) {
     if (!this.shield) {
-      super.hit(damage);
-      document.querySelector(".hp > .value").textContent = this.hitPoints.toString();
+      super.hit(damage, destX, destY);
     }
   }
 
@@ -188,12 +192,13 @@ export class Asteroid extends Entity {
   y: number;
   rotation: number = 0.05;
 
-  rotationRate = 0.05;
+  rotationRate: number;
   speedX: number;
   speedY: number;
 
   isPlayer: boolean = false;
   shouldDelete: boolean = false;
+  destructionAngle: number;
 
   hitPoints: number;
 
@@ -206,6 +211,7 @@ export class Asteroid extends Entity {
 
     // Create a random speed based on the size of the asteroid
     let speed = generateRandomSpeed(5 / Math.log10(height * width));
+    this.rotationRate = Math.random() * 0.1 - 0.05;
     this.speedX = speed.x;
     this.speedY = speed.y;
     this.edges = Asteroid.generateEdges(width / 2);
@@ -269,14 +275,15 @@ export class Projectile extends Entity {
 
   // Determines when the projectile should be deleted
   private expirationTime: number;
-  private lastPosition: {x: number, y: number};
+  private lastPosition: { x: number, y: number };
 
   private damage = 5;
 
-  constructor(x: number, y: number, speedX: number, speedY: number) {
+  constructor(x: number, y: number, speedX: number, speedY: number, angle: number) {
     super(x, y, 5, 5);
     this.speedX = speedX;
     this.speedY = speedY;
+    this.rotation = angle;
     this.expirationTime = Date.now() + 500;
   }
 
@@ -293,7 +300,7 @@ export class Projectile extends Entity {
     adjacent.forEach((entity) => {
       if (entity.type === "Asteroid" && this.intersectsObject(entity)) {
         this.shouldDelete = true;
-        entity.hit(this.damage);
+        entity.hit(this.damage, this.speedX * 0.1, this.speedY * 0.1);
       }
     });
   }
@@ -329,22 +336,30 @@ export class Projectile extends Entity {
   }
 }
 
-const hasCollision = (e1: Bounds, e2: Bounds): boolean => {
-  // TODO real collision detection. This just finds the center and 'radius' for both objects and compares
-  let centerX1 = e1.x + e1.width / 2;
-  let centerY1 = e1.y + e1.height / 2;
-  let radius1 = e1.width > e1.height ? e1.width / 2 : e1.height / 2;
+export class Particle extends Entity {
 
-  let centerX2 = e2.x + e2.width / 2;
-  let centerY2 = e2.y + e2.height / 2;
-  let radius2 = e2.width > e2.height ? e2.width / 2 : e2.height / 2;
+  private expirationTime: number;
 
-  let distance = Math.sqrt(Math.pow(centerX1 - centerX2, 2) + Math.pow(centerY1 - centerY2, 2));
+  constructor(x: number, y: number, speedX: number, speedY: number) {
+    super(x, y, 2, 2);
+    this.speedX = speedX;
+    this.speedY = speedY;
+    this.expirationTime = Date.now() + 3000 * Math.random();
+  }
 
-  return distance <= (radius1 + radius2);
-};
+  render(ctx: CanvasRenderingContext2D) {
+    ctx.fillStyle = "white";
+    ctx.fillRect(this.x + this.width / 2, this.y + this.height / 2, this.width, this.height);
+  }
 
-const generateRandomSpeed = (range: number): {x: number, y: number} => {
+  computeNextPosition(input: UserInput, dt: number, adjacent: Entity[]) {
+    this.x += this.speedX * dt * 0.1;
+    this.y += this.speedY * dt * 0.1;
+    if (Date.now() > this.expirationTime) this.shouldDelete = true;
+  }
+}
+
+const generateRandomSpeed = (range: number): { x: number, y: number } => {
   return {
     x: Math.random() * range * 2 - range,
     y: Math.random() * range * 2 - range

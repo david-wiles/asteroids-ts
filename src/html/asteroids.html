@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <style>
       html, body { margin: 0; padding: 0; }
+      span, h1 { font-family: sans-serif; font-weight: 600; }
       #game-canvas { position: fixed; top: 0; left: 0; }
       .status-bar {
           display: flex;
@@ -30,39 +31,59 @@
           margin: 0 15px;
           color: white;
       }
+      .messages {
+          position: fixed;
+          width: 100%;
+      }
+      .messages > h1 {
+          color: white;
+          margin: auto;
+          width: 171px;
+          margin-top: 25%;
+      }
+      .hidden {
+          display: none;
+      }
   </style>
 </head>
 <body>
 
 <canvas id="game-canvas" width="" height=""></canvas>
+
+<div class="messages">
+  <h1 class="game-over hidden">
+    Game Over
+  </h1>
+  <h1 class="level hidden">
+  </h1>
+</div>
+
 <div class="status-bar">
   <div class="left-bar">
     <div class="score">
       <span class="label">
         Score
       </span>
+      <span class="value">
+
+      </span>
     </div>
     <div class="lives">
       <span class="label">
         Lives
       </span>
+      <span class="value">
+        3
+      </span>
     </div>
   </div>
   <div class="right-bar">
-    <div class="hp">
-      <span class="label">
-        HP:
-      </span>
-      <span class="value">
-        100
-      </span>
-    </div>
     <div class="shield">
       <span class="label">
         Shield
       </span>
       <span class="value">
-        100
+        1000
       </span>
     </div>
   </div>

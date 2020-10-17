@@ -1,7 +1,5 @@
 import World from "./World";
 import {Bounds, UserInput} from "./types";
-import {Asteroid, Starship} from "./Entities";
-import Graphics from "./Graphics";
 import GLOBAL from "./Global";
 
 enum GameState {
@@ -20,9 +18,12 @@ export default class Simulation {
   private userInput: UserInput;
 
   private world: World;
+  private level = 1;
+  private lives = 3;
 
   private dt: number;
   private canvasView: Bounds;
+  private gameOver = false;
 
   constructor(canvas: HTMLCanvasElement) {
     this.state = GameState.Initializing;
@@ -41,17 +42,12 @@ export default class Simulation {
 
     // Initialize the world using width and height from the canvas
     this.world = new World();
+    Simulation.displayLevel(1);
   }
 
   setUp() {
-    this.world.addEntity(new Starship(500, 500));
-
-    this.world.addEntity(new Asteroid(250, 250, 100, 100, 10));
-    this.world.addEntity(new Asteroid(750, 250, 100, 100, 10));
-    this.world.addEntity(new Asteroid(150, 150, 100, 100, 10));
-    this.world.addEntity(new Asteroid(900, 50, 100, 100, 10));
-    this.world.addEntity(new Asteroid(700, 50, 100, 100, 10));
-
+    this.world.resetPlayer();
+    this.world.initLevel(2);
   }
 
   start() {
@@ -95,29 +91,66 @@ export default class Simulation {
     };
   }
 
-  private gameLoop() {
-    if (this.state !== GameState.Finished) {
-      let now = Date.now();
-      let dt = now - this.dt;
-      this.dt = now;
+  private resetPlayer() {
+    this.lives -= 1;
 
-      this.ctx.clearRect(0, 0, GLOBAL.worldWidth, GLOBAL.worldHeight);
-      this.ctx.fillStyle = "black";
-      this.ctx.fillRect(0, 0, GLOBAL.worldWidth, GLOBAL.worldHeight);
-
-      // Draw all entities. Since all entities are always in view, there is no need to search the quadtree
-      this.world.entities
-        .forEach(entity => entity.draw(this.ctx));
-
-      // Calculate next position
-      this.state = GameState.Calculating;
-      this.world.nextStep(this.userInput, dt);
-      this.state = GameState.Running;
-
-      if (this.world.gameOver) {
-        this.state = GameState.Finished;
-      }
-      requestAnimationFrame(this.gameLoop.bind(this));
+    if (this.lives <= 0) {
+      this.gameOver = true;
+    } else {
+      this.world.resetPlayer();
     }
+  }
+
+  private static displayLevel(level: number) {
+    let levelText = document.querySelector(".level")
+    levelText.innerHTML = "Level " + level;
+    levelText.classList.toggle("hidden");
+
+    setTimeout(() => {
+      levelText.classList.toggle("hidden");
+    }, 1000);
+  }
+
+  private gameLoop() {
+    if (this.gameOver) {
+      let gameMessage = document.querySelector(".game-over");
+      if (gameMessage.classList.contains("hidden")) {
+        gameMessage.classList.remove("hidden");
+      }
+    }
+
+    let now = Date.now();
+    let dt = now - this.dt;
+    this.dt = now;
+
+    this.ctx.clearRect(0, 0, GLOBAL.worldWidth, GLOBAL.worldHeight);
+    this.ctx.fillStyle = "black";
+    this.ctx.fillRect(0, 0, GLOBAL.worldWidth, GLOBAL.worldHeight);
+
+    // Draw all entities. Since all entities are always in view, there is no need to search the quadtree
+    this.world.entities.forEach(entity => entity.draw(this.ctx));
+
+    // Calculate next position
+    this.state = GameState.Calculating;
+    this.world.nextStep(this.userInput, dt);
+    this.state = GameState.Running;
+
+    if (this.gameOver) {
+
+      this.state = GameState.Finished;
+
+    } else if (this.world.levelOver) {
+
+      this.level += 1;
+      this.world.initLevel(this.level);
+      Simulation.displayLevel(this.level);
+
+    } else if (this.world.playerDead && !this.gameOver) {
+      this.resetPlayer();
+      document.querySelector(".lives .value").innerHTML = String(this.lives);
+      document.querySelector(".shield .value").innerHTML = "1000";
+    }
+
+    requestAnimationFrame(this.gameLoop.bind(this));
   }
 }
