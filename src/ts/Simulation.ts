@@ -1,32 +1,28 @@
 import World from "./World";
-import {Bounds, UserInput} from "./types";
 import GLOBAL from "./Global";
+import {Bounds, UserInput} from "./util";
 
-enum GameState {
-  Initializing,
-  Running,
-  Calculating,
-  Finished
-}
-
+/**
+ * class Simulation mainly serves as an entry point for the game loop and tracking of the state of the game
+ */
 export default class Simulation {
-  state: GameState;
 
   canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
 
   private userInput: UserInput;
 
+  // Game state variables
   private world: World;
   private level = 1;
   private lives = 3;
-
-  private dt: number;
-  private canvasView: Bounds;
   private gameOver = false;
 
+  // dt is the amount of time passed between ticks
+  private dt: number;
+  private canvasView: Bounds;
+
   constructor(canvas: HTMLCanvasElement) {
-    this.state = GameState.Initializing;
     this.userInput = new UserInput();
     this.canvas = canvas;
     this.canvasView = {
@@ -46,12 +42,11 @@ export default class Simulation {
   }
 
   setUp() {
-    this.world.resetPlayer();
+    this.world.initPlayer();
     this.world.initLevel(2);
   }
 
   start() {
-    this.state = GameState.Running;
     this.dt = Date.now();
     this.gameLoop();
   }
@@ -119,10 +114,12 @@ export default class Simulation {
       }
     }
 
+    // Calculate time passed since last frame
     let now = Date.now();
     let dt = now - this.dt;
     this.dt = now;
 
+    // Clear canvas for rewrite
     this.ctx.clearRect(0, 0, GLOBAL.worldWidth, GLOBAL.worldHeight);
     this.ctx.fillStyle = "black";
     this.ctx.fillRect(0, 0, GLOBAL.worldWidth, GLOBAL.worldHeight);
@@ -131,15 +128,9 @@ export default class Simulation {
     this.world.entities.forEach(entity => entity.draw(this.ctx));
 
     // Calculate next position
-    this.state = GameState.Calculating;
     this.world.nextStep(this.userInput, dt);
-    this.state = GameState.Running;
 
-    if (this.gameOver) {
-
-      this.state = GameState.Finished;
-
-    } else if (this.world.levelOver) {
+    if (this.world.levelOver) {
 
       this.level += 1;
       this.world.initLevel(this.level);

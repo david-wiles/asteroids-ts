@@ -5,8 +5,8 @@
  *
  * QuadTree data structure to minimize work for object collision
  */
-import {Entity} from "./Entities";
-import {Bounds} from "./types";
+import Entity from "./entities/Entity";
+import {Bounds} from "./util";
 
 // TODO make this configurable
 const MAXOBJECTS = 10;
