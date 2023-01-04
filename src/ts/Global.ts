@@ -23,6 +23,12 @@ class Global {
   starshipShieldPoints = 1000;
   starshipDamageSpeedMultiplier = 0.5;
   starshipFireDelay = 100;
+
+  arrowUp = "ArrowUp";
+  arrowDown = "ArrowDown";
+  arrowLeft = "ArrowLeft";
+  arrowRight = "ArrowRight";
+  keyZ = "KeyZ";
 }
 
 let GLOBAL = new Global();

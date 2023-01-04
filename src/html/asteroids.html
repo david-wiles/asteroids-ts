@@ -44,6 +44,28 @@
       .hidden {
           display: none;
       }
+      .start-menu-container {
+          width: 100%;
+          position: fixed;
+      }
+      .start-menu {
+          background: white;
+          margin: 25% auto auto;
+          width: 500px;
+          padding: 50px 100px;
+          text-align: center;
+      }
+
+      .start-menu .mobile {
+          display: none;
+      }
+
+      /* Mobile styling */
+      @media screen and (max-width: 428px) {
+          .start-menu .desktop {
+              display: none;
+          }
+      }
   </style>
 </head>
 <body>
@@ -78,6 +100,25 @@
         1000
       </span>
     </div>
+  </div>
+</div>
+
+<div class="start-menu-container">
+  <div class="start-menu">
+    <span class="desktop">
+      Welcome to Asteroids on Desktop!
+    </span>
+    <br>
+    <span>
+      Use the arrow keys to move, 'z' to shoot, and the left shift key for shield.
+    </span>
+    <br>
+    <span>
+      Press any key to continue.
+    </span>
+    <span class="mobile">
+      Welcome to Asteroids on Mobile!
+    </span>
   </div>
 </div>
 

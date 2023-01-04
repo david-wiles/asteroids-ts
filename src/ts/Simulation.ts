@@ -54,33 +54,33 @@ export default class Simulation {
   registerListeners() {
     // Flip bit when user presses a key
     document.onkeydown = (event: KeyboardEvent) => {
-      if (event.code === "ArrowUp") {
+      if (event.code === GLOBAL.arrowUp) {
         this.userInput.forward = true;
-      } else if (event.code === "ArrowDown") {
+      } else if (event.code === GLOBAL.arrowDown) {
         this.userInput.backward = true;
-      } else if (event.code === "ArrowLeft") {
+      } else if (event.code === GLOBAL.arrowLeft) {
         this.userInput.rotateLeft = true;
-      } else if (event.code === "ArrowRight") {
+      } else if (event.code === GLOBAL.arrowRight) {
         this.userInput.rotateRight = true;
-      } else if (event.code === "KeyF") {
+      } else if (event.code === GLOBAL.keyZ) {
         this.userInput.fire = true;
-      } else if (event.code === "KeyS") {
+      } else if (event.shiftKey) {
         this.userInput.shield = true;
       }
     };
     // Flip bit on key up, key presses may last for multiple cycles
     document.onkeyup = (event: KeyboardEvent) => {
-      if (event.code === "ArrowUp") {
+      if (event.code === GLOBAL.arrowUp) {
         this.userInput.forward = false;
-      } else if (event.code === "ArrowDown") {
+      } else if (event.code === GLOBAL.arrowDown) {
         this.userInput.backward = false;
-      } else if (event.code === "ArrowLeft") {
+      } else if (event.code === GLOBAL.arrowLeft) {
         this.userInput.rotateLeft = false;
-      } else if (event.code === "ArrowRight") {
+      } else if (event.code === GLOBAL.arrowRight) {
         this.userInput.rotateRight = false;
-      } else if (event.code === "KeyF") {
+      } else if (event.code === GLOBAL.keyZ) {
         this.userInput.fire = false;
-      } else if (event.code === "KeyS") {
+      } else {
         this.userInput.shield = false;
       }
     };

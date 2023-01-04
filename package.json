@@ -16,7 +16,7 @@
     "build:js:debug": "rm -rf build && tsc --sourceMap && webpack --mode=development",
     "build:js:prod": "rm -rf build && tsc && webpack --mode=production",
     "watch:js": "tsc --sourceMap --watch & webpack --mode=development --watch; fg",
-    "build:html": "cp src/html/asteroids.html www/",
+    "build:html": "mkdir -p www && cp src/html/asteroids.html www/",
     "build:dev": "yarn run build:html && yarn run build:js:debug",
     "build:prod": "yarn run build:html && yarn run build:js:prod && node prod.js",
     "serve": "http-server www"
